@@ -30,3 +30,15 @@
     border: 3px solid darkblue;
     border-radius: .3rem;
 } */
+
+#history-container {
+    display: flexbox;
+    flex-direction: column;
+    justify-content: space-evenly;
+}
+
+#history-container button {
+    min-width: 250px !important;
+    width: 250px;
+    font-size: medium;
+}

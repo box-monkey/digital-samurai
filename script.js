@@ -1,6 +1,5 @@
 // https://api.openweathermap.org/data/2.5/onecall?lat={lat}&lon={lon}&exclude={part}&appid={API key} - standard api call for reference
-// ** TODO
-// TODO find out replication bug - one liner? smh. 
+
 // TODO display the search history
 
 // api key linked to account
@@ -12,36 +11,39 @@ const dayHumdidity = document.getElementById("humidity");
 const dayWindSpeed = document.getElementById("wind-speed");
 const dayUVIndex = document.getElementById("uv-index");
 
-const currentCity = document.getElementById("enter-city");
+const searchBox = document.getElementById("enter-city");
 const citySearchBtn = document.getElementById("search-button");
 const nameCity = document.getElementById("city-name");
 const fiveDayHeader = document.getElementById("fiveday-header");
 const fiveDayforecast = document.getElementById("five-day-forecast");
-// const citySearchHistory = document.getElementById("city-history");
 
-const fiveDayForecastDay1 = document.getElementById('five-day-forecast-day-1');
-const fiveDayForecastDay2 = document.getElementById('five-day-forecast-day-2');
-const fiveDayForecastDay3 = document.getElementById('five-day-forecast-day-3');
-const fiveDayForecastDay4 = document.getElementById('five-day-forecast-day-4');
-const fiveDayForecastDay5 = document.getElementById('five-day-forecast-day-5');
+const fiveDayForecastDay1 = document.getElementById("five-day-forecast-day-1");
+const fiveDayForecastDay2 = document.getElementById("five-day-forecast-day-2");
+const fiveDayForecastDay3 = document.getElementById("five-day-forecast-day-3");
+const fiveDayForecastDay4 = document.getElementById("five-day-forecast-day-4");
+const fiveDayForecastDay5 = document.getElementById("five-day-forecast-day-5");
 
+const historyContainer = document.getElementById("history-container");
+const maxHistory = 5;
 
 // arrays are special since the contents inside are being manipulated, not it's self. So arrays can be a const unless being completely overwritten. I don't think this actually clarifies, it just makes more confusing
-const history = [];
+let history = [];
 let humidity = null;
 let temp = null;
 let uv = null;
 let windSpeed = null;
 let localStorageKey = null;
-fiveDayForecastDay1.innerHTML = ""; fiveDayForecastDay1.innerHTML = "";
+fiveDayForecastDay1.innerHTML = "";
+fiveDayForecastDay1.innerHTML = "";
 
 function initialLoad() {
   reset();
 }
 
-function reset() {
+function resetWeather() {
+  // hides the 5 day thingy
   fiveDayHeader.style.display = "none";
-
+  // clears 5 day forecast
   fiveDayForecastDay1.innerHTML = "";
   fiveDayForecastDay2.innerHTML = "";
   fiveDayForecastDay3.innerHTML = "";
@@ -49,8 +51,18 @@ function reset() {
   fiveDayForecastDay5.innerHTML = "";
 }
 
+function reset() {
+  resetWeather();
+
+  // clears history
+  historyContainer.innerHTML = "";
+
+  // clears search box
+  searchBox.value = "";
+}
+
 function search() {
-  const searchTerm = currentCity.value;
+  const searchTerm = searchBox.value;
   console.log("search -> searchTerm", searchTerm);
   // add to snippet ---
   // if (variable == null) // == forces variable to string then does a string comparison, === does a direct comparison which won't work
@@ -58,9 +70,9 @@ function search() {
     console.warn("text is missing");
   } else {
     // .push - pushes data in search term into history array.
-    history.push(searchTerm);
+    reset();
     getWeather(searchTerm);
-    console.log('search -> history', history);
+    renderSearchHistory(searchTerm);
   }
 }
 
@@ -84,49 +96,51 @@ function getWeather(searchTerm) {
     })
     .then((response) => response.json())
     .then((responseData) => {
+      resetWeather();
       return parseApiData(responseData);
     });
-    // // outputs error if unable to search
-    // .catch((error) => {
-    //   throw new Error("ERR-1 : Rut-Roh Shaggy", error);
-    // });
+  // // outputs error if unable to search
+  // .catch((error) => {
+  //   throw new Error("ERR-1 : Rut-Roh Shaggy", error);
+  // });
 }
 
 function parseApiData(responseData) {
-  console.log("parseApiData results", responseData);
+  // console.log("parseApiData results", responseData);
   humidity = responseData.current.humidity;
   temp = responseData.current.temp;
   uv = responseData.current.uvi;
   windSpeed = responseData.current.wind_speed;
 
-  dayHumdidity.innerHTML = `${humidity} %`;
-  dayTemperature.innerHTML = `${temp} °F`;
-  dayUVIndex.innerHTML = `${uv}`;
-  dayWindSpeed.innerHTML = `${windSpeed} MPH`;
- // before data collection
+  dayHumdidity.innerHTML = `humidity: ${humidity} %`;
+  dayTemperature.innerHTML = `temp: ${temp} °F`;
+  dayUVIndex.innerHTML = `uv index: ${uv}`;
+  dayWindSpeed.innerHTML = `windspeed: ${windSpeed} MPH`;
+  // before data collection
   for (let i = 0; i < responseData.daily.length; i += 1) {
-    if (i > 0) { // Skip the first day, that's leg day
-      if (i < 6) { // Break out of loop if you're more than 5 days out
+    if (i > 0) {
+      // Skip the first day, that's leg day
+      if (i < 6) {
+        // Break out of loop if you're more than 5 days out
         const day = responseData.daily[i];
-        parseDayData(day, i);  
+        parseDayData(day, i);
       } else {
         break; // breaks out of a loop
       }
     }
   }
-  
+
   // after data collection
   fiveDayHeader.style.display = "flex";
 }
 
-
 function parseDayData(day, index) {
-  console.log(`parseDayData ${index}`, day);
+  // console.log(`parseDayData ${index}`, day);
 
   const dayDate = convertEpochToAmericanDate(day.dt);
   const dayHumidity = day.humidity;
-  const dayTemp = day.temp;
-  const dayWindSpeed = day.windSpeed
+  const dayTemp = day.temp.day;
+  const dayWindSpeed = day.wind_speed;
 
   let weatherPic = `https://openweathermap.org/img/wn/${day.weather[0].icon}@2x.png`;
 
@@ -135,7 +149,7 @@ function parseDayData(day, index) {
   let image = new Image();
   image.src = weatherPic;
   dayDiv.appendChild(image);
- 
+
   // dynamically creating P elements
   let dateTextBox = document.createElement("p");
   dateTextBox.innerHTML = dayDate;
@@ -144,7 +158,7 @@ function parseDayData(day, index) {
   let humidityText = document.createElement("p");
   humidityText.innerHTML = `humidity: ${dayHumidity} %`;
   dayDiv.appendChild(humidityText);
- 
+
   // showing as object object
   let tempText = document.createElement("p");
   tempText.innerHTML = `temp: ${dayTemp}°F`;
@@ -154,43 +168,43 @@ function parseDayData(day, index) {
   let windText = document.createElement("p");
   windText.innerHTML = `wind speed: ${dayWindSpeed}`;
   dayDiv.appendChild(windText);
-
 }
 
-reset(parseDayData);
+// render search history
 
-// render search history 
-// function renderSearchHistory() {
-//   cityHistory = "";
-//   for (let i = 0; i < citySearchHistory.length; i += 1) {
-//     const history = document.createElement("p");
-//     history.setItem("type", "text");
-//     history.setItem("class", "city-history d-block bg-white");
-//     history.setItem("value", citySearchHistory[i]);
-//     history.addEventListener("click", function () {
-//       getWeather(history.value);
-//     });
-//     cityHistory.append(history);
-//   } 
-// }
+// change tmp values
+function renderSearchHistory(searchTerm) {
+  history.push(searchTerm);
 
-// renderSearchHistory();
-// if (searchHistory.length > 0) {
-//     getWeather(searchHistory[searchHistory.length - 1]);
-// }
+  if (history.length > maxHistory) {
+    // console.log('pre renderSearchHistory', history);
+    let removedElement = history.shift();
+    // console.log(removedElement);
+    // console.log('post renderSearchHistory', history);
+  }
+  // console.log("renderSearchHistory", history);
 
+  // head <---- the name of the variable
+  // 16 bytes |--| <- size
+  // body <---- the dataz of the variable
+  // |--| ... |------------------------------|
 
+  // lodash, _,
+  // let tmpHistory = _.deepClone(history);
 
-// function renderHistory() {
-// //   const cityHistory = citySearchHistory
-// //   citySearchHistory.innerHTML = "";
-// // for(let i = 0; i < history.length; i += 1) {
-//  localStorage.setItem(localStorageKey, JSON.stringify(currentCity));
-// }
+  let tmpHistory = [...history, ...[]]; // a rough copy
+  tmpHistory.reverse();
 
-// function displayHistory() {
-
-// }
+  for (let i = 0; i < tmpHistory.length; i += 1) {
+    const text = tmpHistory[i];
+    const tmp = document.createElement("button");
+    tmp.innerHTML = text;
+    tmp.addEventListener("click", function () {
+      getWeather(text);
+    });
+    historyContainer.appendChild(tmp);
+  }
+}
 
 // epoch time conversion
 function convertEpochToAmericanDate(epoch) {
