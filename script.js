@@ -1,6 +1,3 @@
-// https://api.openweathermap.org/data/2.5/onecall?lat={lat}&lon={lon}&exclude={part}&appid={API key} - standard api call for reference
-
-// TODO display the search history
 
 // api key linked to account
 const weatherApiKey = "932966538ed5411e38b3802b798112a3";
